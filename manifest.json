@@ -1,6 +1,6 @@
 {
   "name": "yt-img-scraper",
-  "description": "Downloads user images images from any youtube video.",
+  "description": "Downloads user images from comment section of any youtube video",
   "version": "1.0",
   "manifest_version": 3,
   "background": {
