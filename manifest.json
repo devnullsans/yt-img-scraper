@@ -1,0 +1,36 @@
+{
+  "name": "yt-img-scraper",
+  "description": "Downloads user images images from any youtube video.",
+  "version": "1.0",
+  "manifest_version": 3,
+  "background": {
+    "service_worker": "service_worker.js"
+  },
+  "permissions": ["storage", "webRequest"],
+  "host_permissions": ["https://www.youtube.com/youtubei/v1/next*"],
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/watch*"],
+      "js": ["watch_script.js"]
+    },
+    {
+      "matches": ["https://yt3.ggpht.com/*"],
+      "js": ["yt3.ggpht_script.js"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "/images/icon16.png",
+      "32": "/images/icon32.png",
+      "48": "/images/icon48.png",
+      "128": "/images/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "/images/icon16.png",
+    "32": "/images/icon32.png",
+    "48": "/images/icon48.png",
+    "128": "/images/icon128.png"
+  }
+}
