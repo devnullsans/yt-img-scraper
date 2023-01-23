@@ -8,9 +8,9 @@ window.addEventListener("load", () => {
         .then((file) => {
           const a = document.createElement("a");
           a.href = URL.createObjectURL(file);
-          a.download = document.title.slice(0, document.title.indexOf(" "));
+          a.download = document.title.slice(0, document.title.indexOf("=s256 "));
           a.click();
-          return new Promise((resolve) => setTimeout(() => resolve(), 1e2));
+          return Promise.resolve();
         })
         .then(() => window.close())
         .catch(console.error);

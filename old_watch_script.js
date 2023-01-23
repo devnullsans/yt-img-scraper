@@ -112,9 +112,7 @@ function scrollRequestComplete() {
         .querySelector("#columns")
         .querySelector("#below")
         .querySelector("#comments")
-        .querySelector("#contents")
-        .querySelector("ytd-continuation-item-renderer")
-        .querySelector("#spinner");
+        .querySelector("#contents").lastElementChild;
       // console.log(lastNode.tagName);
       if (lastNode.tagName !== "YTD-CONTINUATION-ITEM-RENDERER") {
         replies = Array.from(
@@ -139,37 +137,13 @@ function scrollRequestComplete() {
 function onLoadHandle() {
   storage.local.get("enabled", ({ enabled }) => {
     if (enabled) {
-      document.querySelector("#player")?.remove();
-      document.querySelector("#related")?.remove();
-      document.querySelector("#below > ytd-watch-metadata")?.remove();
-      document.querySelector("#below > ytd-merch-shelf-renderer")?.remove();
-      let tid = 0;
-      scheduler.postTask(
-        () => {
-          const comments = document.querySelector("#comments > #sections > #contents");
-          console.log(comments, comments?.children?.length);
-          if (comments) {
-            const observer = new MutationObserver((_, observer) => {
-              clearTimeout(tid);
-              tid = setTimeout(() => {
-                window.scrollTo(0, document.scrollingElement.scrollHeight + window.innerHeight);
-                if (comments.lastElementChild.localName === "ytd-comment-thread-renderer") {
-                  observer.disconnect();
-                  replies = Array.from(
-                    comments.querySelectorAll(
-                      "#sections > #contents > ytd-comment-thread-renderer > #replies:not([hidden])"
-                    )
-                  ).map((re) => re.querySelector("button"));
-                  runtime.onMessage.addListener(viewRequestComplete);
-                  viewRequestComplete();
-                }
-              }, 3e2);
-            });
-            observer.observe(comments, { childList: true });
-          }
-        },
-        { priority: "background" }
-      );
+      runtime.onMessage.addListener(scrollRequestComplete);
+      requestAnimationFrame(() => {
+        document.querySelector("#player").remove();
+        document.querySelector("#related").remove();
+        document.querySelector("#below > ytd-watch-metadata")?.remove();
+        document.querySelector("#below > ytd-merch-shelf-renderer")?.remove();
+      });
     }
   });
 }
