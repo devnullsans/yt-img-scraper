@@ -1,34 +1,26 @@
-const { runtime, storage, tabs, webRequest } = chrome;
+const { runtime, storage, webRequest } = chrome;
 
-function completeRequestHandler(details) {
-  // console.log(details);
-  tabs.sendMessage(details.tabId, true);
-}
+runtime.onInstalled.addListener(async function (details) {
+  await storage.local.clear();
 
-function messageHandler(request, sender, sendResponse) {
-  if (request.type === "toggle" && sender.url.includes("popup.html")) {
-    storage.local.get("enabled", ({ enabled }) => {
-      if (enabled) {
-        webRequest.onCompleted.removeListener(completeRequestHandler);
-      } else {
-        webRequest.onCompleted.addListener(completeRequestHandler, {
-          urls: ["https://www.youtube.com/youtubei/v1/next*"],
-          types: ["xmlhttprequest"]
-        });
+  webRequest.onCompleted.addListener(
+    async function completeRequestHandler(details) {
+      const { url, responseHeaders } = details;
+
+      const urlcomp = new URL(url);
+
+      if (responseHeaders.some((header) => header.name === "etag")) {
+        const pathkey = urlcomp.pathname.replace(/=s\d+.*/, "");
+
+        await storage.local.set({ [pathkey]: true });
+
+        console.log(urlcomp.origin + pathkey);
       }
-      storage.local.set({ enabled: !enabled }, () => sendResponse(!enabled));
-    });
-  } else if (request.type === "done" && sender.tab) {
-    tabs.remove(sender.tab.id);
-  }
-  return true;
-}
-
-runtime.onInstalled.addListener(() => storage.local.set({ enabled: true }));
-
-runtime.onMessage.addListener(messageHandler);
-
-webRequest.onCompleted.addListener(completeRequestHandler, {
-  urls: ["https://www.youtube.com/youtubei/v1/next*"],
-  types: ["xmlhttprequest"]
+    },
+    {
+      urls: ["https://yt3.ggpht.com/*"],
+      types: ["image"]
+    },
+    ["responseHeaders"]
+  );
 });
