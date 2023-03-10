@@ -1,5 +1,3 @@
-# YouTube Image Scraper
+# YouTube Image Collector
 
-It can download all unique user account images from the comment section of any youtube video.
-
-## Steps
+It saves all user images from the comment section of any youtube video and display them in the options page of the extention.

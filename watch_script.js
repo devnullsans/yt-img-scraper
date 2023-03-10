@@ -1,177 +1,76 @@
-const { runtime, storage } = chrome;
+const { runtime } = chrome;
 
-const rRx = /=s\d+.*/;
-const fRx = /^https:\/\/yt3\.ggpht\.com\/[^\/]+=s.*/;
+let aid, uid, vid;
+const replies = [];
 
-let replies = Array(0),
-  urls = new Set();
-
-function download() {
-  addToSet();
-  for (const url of urls) {
-    const a = document.createElement("a");
-    a.href = url;
-    a.target = "_blank";
-    a.rel = "noreferrer";
-    a.click();
-  }
-  requestAnimationFrame(() => runtime.sendMessage({ type: "done" }));
-}
-
-function addToSet() {
-  const imgs = document
-    .getElementById("content")
-    .querySelector("#page-manager")
-    .querySelector("#columns")
-    .querySelector("#below")
-    .querySelector("#comments")
-    .querySelector("#contents")
-    .querySelectorAll("#img");
-  if (imgs && imgs.length) {
-    for (const img of imgs) {
-      if (fRx.test(img.src)) {
-        urls.add(img.src.replace(rRx, "=s256"));
-      }
+const getMoreReplies = async () => {
+  const moreReplies = [...document.querySelectorAll("#button > ytd-button-renderer > yt-button-shape > button")];
+  if (moreReplies.length) {
+    for (const btn of moreReplies) {
+      await new Promise((rs) => {
+        setTimeout(rs, 1e3);
+        btn.focus();
+        btn.click();
+      });
     }
+    getMoreReplies();
+  } else {
+    console.log("All done!");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
-  console.log(`There are ${urls.size} urls now`);
-}
+};
 
-function printScrollPercentege() {
-  console.log(
-    `Scroll Percent: ${Math.round(
-      ((document.scrollingElement.scrollTop + window.innerHeight) /
-        document.scrollingElement.scrollHeight) *
-        1e2
-    )}`
-  );
-}
-
-function smoothScrollAll() {
-  requestAnimationFrame(() => {
-    if (
-      document.scrollingElement.scrollHeight >
-      document.scrollingElement.scrollTop + window.innerHeight
-    ) {
-      window.scrollBy({ top: window.innerHeight, behavior: "smooth" });
-      addToSet();
-      printScrollPercentege();
-      setTimeout(smoothScrollAll, 8e2);
-    } else {
-      download();
-    }
-  });
-}
-
-function viewRequestComplete() {
-  requestAnimationFrame(() => {
-    if (replies.length) {
-      const btn = replies.pop();
+const popReplies = async () => {
+  for (const btn of replies) {
+    await new Promise((rs) => {
+      setTimeout(rs, 1e3);
       btn.focus();
       btn.click();
-      printScrollPercentege();
-    } else {
-      replies = Array.from(
-        document
-          .getElementById("content")
-          .querySelector("#page-manager")
-          .querySelector("#columns")
-          .querySelector("#below")
-          .querySelector("#comments")
-          .querySelector("#contents")
-          .querySelectorAll("#replies:not([hidden])")
-      )
-        .map((re) =>
-          re
-            .querySelector("#expander-contents")
-            .querySelector("#contents")
-            .querySelector("#button")
-            ?.querySelector("button")
-        )
-        .filter(Boolean);
-      if (replies.length) viewRequestComplete();
-      else {
-        runtime.onMessage.removeListener(viewRequestComplete);
-        window.scrollTo(0, 0);
-        smoothScrollAll();
-      }
-    }
-  });
-}
-
-function scrollRequestComplete() {
-  // console.log("scrollRequestComplete");
-  setTimeout(() => {
-    // console.log("scrollRequestComplete setTimeout");
-    window.scrollTo(0, document.scrollingElement.scrollHeight + window.innerHeight);
-    requestAnimationFrame(() => {
-      // console.log("scrollRequestComplete setTimeout Promise.resolve");
-      const lastNode = document
-        .getElementById("content")
-        .querySelector("#page-manager")
-        .querySelector("#columns")
-        .querySelector("#below")
-        .querySelector("#comments")
-        .querySelector("#contents")
-        .querySelector("ytd-continuation-item-renderer")
-        .querySelector("#spinner");
-      // console.log(lastNode.tagName);
-      if (lastNode.tagName !== "YTD-CONTINUATION-ITEM-RENDERER") {
-        replies = Array.from(
-          document
-            .getElementById("content")
-            .querySelector("#page-manager")
-            .querySelector("#columns")
-            .querySelector("#below")
-            .querySelector("#comments")
-            .querySelector("#contents")
-            .querySelectorAll("#replies:not([hidden])")
-        ).map((re) => re.querySelector("button"));
-        runtime.onMessage.removeListener(scrollRequestComplete);
-        runtime.onMessage.addListener(viewRequestComplete);
-        // console.log("onMessage listener changed");
-        viewRequestComplete();
-      }
     });
-  }, 5e2);
-}
+  }
+  getMoreReplies();
+};
 
-function onLoadHandle() {
-  storage.local.get("enabled", ({ enabled }) => {
-    if (enabled) {
-      document.querySelector("#player")?.remove();
-      document.querySelector("#related")?.remove();
-      document.querySelector("#below > ytd-watch-metadata")?.remove();
-      document.querySelector("#below > ytd-merch-shelf-renderer")?.remove();
-      let tid = 0;
-      scheduler.postTask(
-        () => {
-          const comments = document.querySelector("#comments > #sections > #contents");
-          console.log(comments, comments?.children?.length);
-          if (comments) {
-            const observer = new MutationObserver((_, observer) => {
-              clearTimeout(tid);
-              tid = setTimeout(() => {
-                window.scrollTo(0, document.scrollingElement.scrollHeight + window.innerHeight);
-                if (comments.lastElementChild.localName === "ytd-comment-thread-renderer") {
-                  observer.disconnect();
-                  replies = Array.from(
-                    comments.querySelectorAll(
-                      "#sections > #contents > ytd-comment-thread-renderer > #replies:not([hidden])"
-                    )
-                  ).map((re) => re.querySelector("button"));
-                  runtime.onMessage.addListener(viewRequestComplete);
-                  viewRequestComplete();
-                }
-              }, 3e2);
-            });
-            observer.observe(comments, { childList: true });
-          }
-        },
-        { priority: "background" }
-      );
-    }
-  });
-}
+const getReplies = () => {
+  console.log("60 secs passed since last ui req");
+  if (replies.length === 0) {
+    replies.push(...document.querySelectorAll("#more-replies > yt-button-shape > button"));
+    popReplies();
+  }
+};
 
-window.addEventListener("load", onLoadHandle);
+const checkMessage = (type) => {
+  switch (type) {
+    case "ui":
+      if (replies.length === 0) {
+        clearTimeout(uid);
+        clearTimeout(aid);
+        uid = setTimeout(() => window.scrollBy({ top: window.innerHeight }), 1e2);
+        aid = setTimeout(() => getReplies(), 6e4);
+      }
+      break;
+    case "vp":
+      clearTimeout(vid);
+      vid = setTimeout(() => {
+        document.querySelector("body > ytd-app > ytd-miniplayer")?.remove();
+        document.querySelector("body > ytd-app > ytd-popup-container")?.remove();
+        document.querySelector("#secondary")?.remove();
+        document.querySelector("#player")?.remove();
+        document.querySelector("#alerts")?.remove();
+        document.querySelector("#messages")?.remove();
+        document.querySelector("#clarify-box")?.remove();
+        document.querySelector("#limited-state")?.remove();
+        document.querySelector("#below > ytd-watch-metadata")?.remove();
+        document.querySelector("#below > div:nth-child(1)")?.remove();
+        document.querySelector("#ticket-shelf")?.remove();
+        document.querySelector("#merch-shelf")?.remove();
+      }, 1e3);
+      break;
+  }
+};
+
+runtime.onMessage.addListener(function (message) {
+  const { type } = message;
+  checkMessage(type);
+  console.log(`${type} message received`);
+});
