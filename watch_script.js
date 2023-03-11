@@ -3,28 +3,38 @@ const { runtime } = chrome;
 let aid, uid, vid;
 const replies = [];
 
+const loadAllImgs = async () => {
+  const allImgs = [...document.querySelectorAll("#author-thumbnail > a")];
+  for (const btn of allImgs) {
+    await new Promise((rs) => {
+      setTimeout(rs, 2e2);
+      btn.scrollIntoView({ block: "center" });
+    });
+  }
+};
+
 const getMoreReplies = async () => {
   const moreReplies = [...document.querySelectorAll("#button > ytd-button-renderer > yt-button-shape > button")];
   if (moreReplies.length) {
     for (const btn of moreReplies) {
       await new Promise((rs) => {
-        setTimeout(rs, 1e3);
-        btn.focus();
+        setTimeout(rs, 2e3);
+        btn.scrollIntoView({ behavior: "smooth" });
         btn.click();
       });
     }
     getMoreReplies();
   } else {
-    console.log("All done!");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0 });
+    loadAllImgs();
   }
 };
 
 const popReplies = async () => {
   for (const btn of replies) {
     await new Promise((rs) => {
-      setTimeout(rs, 1e3);
-      btn.focus();
+      setTimeout(rs, 2e3);
+      btn.scrollIntoView({ behavior: "smooth" });
       btn.click();
     });
   }
@@ -32,21 +42,20 @@ const popReplies = async () => {
 };
 
 const getReplies = () => {
-  console.log("60 secs passed since last ui req");
   if (replies.length === 0) {
     replies.push(...document.querySelectorAll("#more-replies > yt-button-shape > button"));
     popReplies();
   }
 };
 
-const checkMessage = (type) => {
-  switch (type) {
+runtime.onMessage.addListener(function (message) {
+  switch (message.type) {
     case "ui":
       if (replies.length === 0) {
         clearTimeout(uid);
         clearTimeout(aid);
-        uid = setTimeout(() => window.scrollBy({ top: window.innerHeight }), 1e2);
-        aid = setTimeout(() => getReplies(), 6e4);
+        uid = setTimeout(() => window.scrollBy({ top: window.innerHeight }), 2e2);
+        aid = setTimeout(() => getReplies(), 2e4);
       }
       break;
     case "vp":
@@ -64,13 +73,7 @@ const checkMessage = (type) => {
         document.querySelector("#below > div:nth-child(1)")?.remove();
         document.querySelector("#ticket-shelf")?.remove();
         document.querySelector("#merch-shelf")?.remove();
-      }, 1e3);
+      }, 2e1);
       break;
   }
-};
-
-runtime.onMessage.addListener(function (message) {
-  const { type } = message;
-  checkMessage(type);
-  console.log(`${type} message received`);
 });
