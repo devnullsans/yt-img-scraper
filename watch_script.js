@@ -7,7 +7,7 @@ const loadAllImgs = async () => {
   const allImgs = [...document.querySelectorAll("#author-thumbnail > a")];
   for (const btn of allImgs) {
     await new Promise((rs) => {
-      setTimeout(rs, 2e2);
+      setTimeout(rs, 1e2);
       btn.scrollIntoView({ block: "center" });
     });
   }
@@ -18,7 +18,7 @@ const getMoreReplies = async () => {
   if (moreReplies.length) {
     for (const btn of moreReplies) {
       await new Promise((rs) => {
-        setTimeout(rs, 2e3);
+        setTimeout(rs, 1e3);
         btn.scrollIntoView({ behavior: "smooth" });
         btn.click();
       });
@@ -26,14 +26,14 @@ const getMoreReplies = async () => {
     getMoreReplies();
   } else {
     window.scrollTo({ top: 0 });
-    loadAllImgs();
+    setTimeout(() => loadAllImgs(), 1e4);
   }
 };
 
 const popReplies = async () => {
   for (const btn of replies) {
     await new Promise((rs) => {
-      setTimeout(rs, 2e3);
+      setTimeout(rs, 1e3);
       btn.scrollIntoView({ behavior: "smooth" });
       btn.click();
     });
@@ -54,8 +54,8 @@ runtime.onMessage.addListener(function (message) {
       if (replies.length === 0) {
         clearTimeout(uid);
         clearTimeout(aid);
-        uid = setTimeout(() => window.scrollBy({ top: window.innerHeight }), 2e2);
-        aid = setTimeout(() => getReplies(), 2e4);
+        uid = setTimeout(() => window.scrollBy({ top: window.innerHeight }), 1e2);
+        aid = setTimeout(() => getReplies(), 1e4);
       }
       break;
     case "vp":
@@ -73,7 +73,7 @@ runtime.onMessage.addListener(function (message) {
         document.querySelector("#below > div:nth-child(1)")?.remove();
         document.querySelector("#ticket-shelf")?.remove();
         document.querySelector("#merch-shelf")?.remove();
-      }, 2e1);
+      }, 1e1);
       break;
   }
 });

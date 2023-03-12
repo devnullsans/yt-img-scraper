@@ -4,18 +4,18 @@ runtime.onInstalled.addListener(async function () {
   try {
     await storage.local.clear();
   } catch (error) {
-    console.log("storage.local.clear", error);
+    console.error(error);
   }
 });
 
 webRequest.onBeforeRequest.addListener(
   async function (details) {
-    const { tabId } = details;
-
     try {
+      const { tabId } = details;
+
       await tabs.sendMessage(tabId, { type: "vp" });
     } catch (error) {
-      console.log("tabs.sendMessage(vp)", error);
+      console.error(error);
     }
   },
   {
@@ -26,20 +26,38 @@ webRequest.onBeforeRequest.addListener(
 
 webRequest.onCompleted.addListener(
   async function (details) {
-    const { url, tabId, responseHeaders } = details;
-
-    const urlcomp = new URL(url);
-
-    if (responseHeaders.some((header) => header.name === "etag") && !urlcomp.pathname.includes("default-user")) {
-      const pathkey = urlcomp.pathname.replace(/=s\d+.*/, "");
-
-      await storage.local.set({ [pathkey]: true });
-    }
-
     try {
-      await tabs.sendMessage(tabId, { type: "ui" });
+      const { url, tabId, responseHeaders, initiator } = details;
+
+      if (initiator === "https://www.youtube.com") {
+        const uasURL = new URL(url);
+
+        if (responseHeaders.some((header) => header.name === "etag") && !uasURL.pathname.includes("default-user")) {
+          const tab = await tabs.get(tabId);
+
+          const tabURL = new URL(tab.url);
+
+          const videoID = tabURL.searchParams.get("v");
+
+          const stringUA = uasURL.pathname.replace(/=s\d+.*/, "");
+
+          const store = await storage.local.get(videoID);
+
+          const list = store[videoID];
+
+          if (Array.isArray(list)) {
+            if (!list.includes(stringUA)) {
+              await storage.local.set({ [videoID]: [...list, stringUA] });
+            }
+          } else {
+            await storage.local.set({ [videoID]: [stringUA] });
+          }
+        }
+
+        await tabs.sendMessage(tabId, { type: "ui" });
+      }
     } catch (error) {
-      console.log("tabs.sendMessage(ui)", error);
+      console.error(error);
     }
   },
   {
