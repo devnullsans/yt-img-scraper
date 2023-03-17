@@ -49,6 +49,7 @@ const getReplies = () => {
 };
 
 runtime.onMessage.addListener(function (message) {
+  console.log(message);
   switch (message.type) {
     case "ui":
       if (replies.length === 0) {
@@ -77,3 +78,5 @@ runtime.onMessage.addListener(function (message) {
       break;
   }
 });
+
+console.log("Content Script Injected");

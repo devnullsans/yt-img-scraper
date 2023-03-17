@@ -11,9 +11,17 @@ runtime.onInstalled.addListener(async function () {
 webRequest.onBeforeRequest.addListener(
   async function (details) {
     try {
-      const { tabId } = details;
+      const { tabId, initiator } = details;
 
-      await tabs.sendMessage(tabId, { type: "vp" });
+      if (initiator === "https://www.youtube.com") {
+        const tab = await tabs.get(tabId);
+
+        const tabURL = new URL(tab.url);
+
+        if (tabURL.pathname === "/watch" && tabURL.searchParams.has("v")) {
+          await tabs.sendMessage(tabId, { type: "vp" });
+        }
+      }
     } catch (error) {
       console.error(error);
     }
@@ -37,24 +45,26 @@ webRequest.onCompleted.addListener(
 
           const tabURL = new URL(tab.url);
 
-          const videoID = tabURL.searchParams.get("v");
+          if (tabURL.pathname === "/watch" && tabURL.searchParams.has("v")) {
+            const videoID = tabURL.searchParams.get("v");
 
-          const stringUA = uasURL.pathname.replace(/=s\d+.*/, "");
+            const stringUA = uasURL.pathname.replace(/=s\d+.*/, "");
 
-          const store = await storage.local.get(videoID);
+            const store = await storage.local.get(videoID);
 
-          const list = store[videoID];
+            const list = store[videoID];
 
-          if (Array.isArray(list)) {
-            if (!list.includes(stringUA)) {
-              await storage.local.set({ [videoID]: [...list, stringUA] });
+            if (Array.isArray(list)) {
+              if (!list.includes(stringUA)) {
+                await storage.local.set({ [videoID]: [...list, stringUA] });
+              }
+            } else {
+              await storage.local.set({ [videoID]: [stringUA] });
             }
-          } else {
-            await storage.local.set({ [videoID]: [stringUA] });
+
+            await tabs.sendMessage(tabId, { type: "ui" });
           }
         }
-
-        await tabs.sendMessage(tabId, { type: "ui" });
       }
     } catch (error) {
       console.error(error);
