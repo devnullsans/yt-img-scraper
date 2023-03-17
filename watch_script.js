@@ -1,6 +1,6 @@
 const { runtime } = chrome;
 
-let aid, uid, vid;
+let aid, uid;
 const replies = [];
 
 const loadAllImgs = async () => {
@@ -60,21 +60,18 @@ runtime.onMessage.addListener(function (message) {
       }
       break;
     case "vp":
-      clearTimeout(vid);
-      vid = setTimeout(() => {
-        document.querySelector("body > ytd-app > ytd-miniplayer")?.remove();
-        document.querySelector("body > ytd-app > ytd-popup-container")?.remove();
-        document.querySelector("#secondary")?.remove();
-        document.querySelector("#player")?.remove();
-        document.querySelector("#alerts")?.remove();
-        document.querySelector("#messages")?.remove();
-        document.querySelector("#clarify-box")?.remove();
-        document.querySelector("#limited-state")?.remove();
-        document.querySelector("#below > ytd-watch-metadata")?.remove();
-        document.querySelector("#below > div:nth-child(1)")?.remove();
-        document.querySelector("#ticket-shelf")?.remove();
-        document.querySelector("#merch-shelf")?.remove();
-      }, 1e1);
+      document.querySelector("body > ytd-app > ytd-miniplayer")?.remove();
+      document.querySelector("body > ytd-app > ytd-popup-container")?.remove();
+      document.querySelector("#secondary")?.remove();
+      document.querySelector("#player")?.remove();
+      document.querySelector("#alerts")?.remove();
+      document.querySelector("#messages")?.remove();
+      document.querySelector("#clarify-box")?.remove();
+      document.querySelector("#limited-state")?.remove();
+      document.querySelector("#below > ytd-watch-metadata")?.remove();
+      document.querySelector("#below > div:nth-child(1)")?.remove();
+      document.querySelector("#ticket-shelf")?.remove();
+      document.querySelector("#merch-shelf")?.remove();
       break;
   }
 });
