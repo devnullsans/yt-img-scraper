@@ -1,6 +1,6 @@
-const { runtime } = chrome;
+const { runtime } = browser;
 
-let aid, uid;
+let aid;
 const replies = [];
 
 const loadAllImgs = async () => {
@@ -19,7 +19,7 @@ const getMoreReplies = async () => {
     for (const btn of moreReplies) {
       await new Promise((rs) => {
         setTimeout(rs, 1e3);
-        btn.scrollIntoView({ behavior: "smooth" });
+        btn.scrollIntoView({ behavior: "auto" });
         btn.click();
       });
     }
@@ -34,7 +34,7 @@ const popReplies = async () => {
   for (const btn of replies) {
     await new Promise((rs) => {
       setTimeout(rs, 1e3);
-      btn.scrollIntoView({ behavior: "smooth" });
+      btn.scrollIntoView({ behavior: "auto" });
       btn.click();
     });
   }
@@ -49,14 +49,12 @@ const getReplies = () => {
 };
 
 runtime.onMessage.addListener(function (message) {
-  console.log(message);
   switch (message.type) {
     case "ui":
       if (replies.length === 0) {
-        clearTimeout(uid);
         clearTimeout(aid);
-        uid = setTimeout(() => window.scrollBy({ top: window.innerHeight }), 1e2);
         aid = setTimeout(() => getReplies(), 1e4);
+        setTimeout(() => window.scrollBy({ top: window.innerHeight }), 1e2);
       }
       break;
     case "vp":

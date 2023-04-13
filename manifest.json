@@ -2,10 +2,13 @@
   "name": "yt-img-scraper",
   "description": "Save and display user images from comment section of any youtube video.",
   "version": "1.0",
-  "manifest_version": 3,
-  "options_page": "options.html",
+  "manifest_version": 2,
+  "options_ui": {
+    "open_in_tab": true,
+    "page": "options.html"
+  },
   "background": {
-    "service_worker": "service_worker.js"
+    "scripts": ["service_worker.js"]
   },
   "content_scripts": [
     {
@@ -14,12 +17,18 @@
       "run_at": "document_start"
     }
   ],
-  "permissions": ["storage", "unlimitedStorage", "webRequest"],
-  "host_permissions": ["https://www.youtube.com/watch*", "https://*.googlevideo.com/videoplayback*", "https://yt3.ggpht.com/*"],
+  "permissions": [
+    "storage",
+    "unlimitedStorage",
+    "webRequest",
+    "https://www.youtube.com/watch*",
+    "https://*.googlevideo.com/videoplayback*",
+    "https://yt3.ggpht.com/*"
+  ],
   "icons": {
-    "16": "/images/icon16.png",
-    "32": "/images/icon32.png",
-    "48": "/images/icon48.png",
-    "128": "/images/icon128.png"
+    "16": "images/icon16.png",
+    "32": "images/icon32.png",
+    "48": "images/icon48.png",
+    "128": "images/icon128.png"
   }
 }

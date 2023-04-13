@@ -1,4 +1,4 @@
-const { runtime, storage, tabs, webRequest } = chrome;
+const { runtime, storage, tabs, webRequest } = browser;
 
 runtime.onInstalled.addListener(async function () {
   try {
@@ -11,12 +11,10 @@ runtime.onInstalled.addListener(async function () {
 webRequest.onBeforeRequest.addListener(
   async function (details) {
     try {
-      const { tabId, initiator } = details;
+      const { tabId, originUrl } = details;
 
-      if (initiator === "https://www.youtube.com") {
-        const tab = await tabs.get(tabId);
-
-        const tabURL = new URL(tab.url);
+      if (originUrl.startsWith("https://www.youtube.com")) {
+        const tabURL = new URL(originUrl);
 
         if (tabURL.pathname === "/watch" && tabURL.searchParams.has("v")) {
           await tabs.sendMessage(tabId, { type: "vp" });
@@ -28,22 +26,20 @@ webRequest.onBeforeRequest.addListener(
   },
   {
     urls: ["https://*.googlevideo.com/videoplayback*"],
-    types: ["xmlhttprequest"]
+    types: ["xmlhttprequest"],
   }
 );
 
 webRequest.onCompleted.addListener(
   async function (details) {
     try {
-      const { url, tabId, responseHeaders, initiator } = details;
+      const { url, tabId, responseHeaders, originUrl } = details;
 
-      if (initiator === "https://www.youtube.com") {
+      if (originUrl.startsWith("https://www.youtube.com")) {
         const uasURL = new URL(url);
 
         if (responseHeaders.some((header) => header.name === "etag") && !uasURL.pathname.includes("default-user")) {
-          const tab = await tabs.get(tabId);
-
-          const tabURL = new URL(tab.url);
+          const tabURL = new URL(originUrl);
 
           if (tabURL.pathname === "/watch" && tabURL.searchParams.has("v")) {
             const videoID = tabURL.searchParams.get("v");
@@ -72,7 +68,7 @@ webRequest.onCompleted.addListener(
   },
   {
     urls: ["https://yt3.ggpht.com/*"],
-    types: ["image"]
+    types: ["image"],
   },
   ["responseHeaders"]
 );

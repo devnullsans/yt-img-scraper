@@ -1,4 +1,4 @@
-const { storage } = chrome;
+const { storage } = browser;
 
 let store = {},
   images = new Set();
