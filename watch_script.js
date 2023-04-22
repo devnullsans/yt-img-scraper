@@ -15,6 +15,7 @@ const loadAllImgs = async () => {
 
 const getMoreReplies = async () => {
   const moreReplies = [...document.querySelectorAll("#button > ytd-button-renderer > yt-button-shape > button")];
+  // console.log(`moreReplies length ${moreReplies.length}`);
   if (moreReplies.length) {
     for (const btn of moreReplies) {
       await new Promise((rs) => {
@@ -22,6 +23,7 @@ const getMoreReplies = async () => {
         btn.scrollIntoView({ behavior: "smooth" });
         btn.click();
       });
+      // console.log(`Index of btn ${moreReplies.indexOf(btn)}`);
     }
     getMoreReplies();
   } else {
@@ -37,6 +39,7 @@ const popReplies = async () => {
       btn.scrollIntoView({ behavior: "smooth" });
       btn.click();
     });
+    // console.log(`Index of btn ${replies.indexOf(btn)}`);
   }
   getMoreReplies();
 };
@@ -45,11 +48,11 @@ const getReplies = () => {
   if (replies.length === 0) {
     replies.push(...document.querySelectorAll("#more-replies > yt-button-shape > button"));
     popReplies();
+    // console.log(`replies length ${replies.length}`);
   }
 };
 
 runtime.onMessage.addListener(function (message) {
-  console.log(message);
   switch (message.type) {
     case "ui":
       if (replies.length === 0) {
@@ -57,21 +60,22 @@ runtime.onMessage.addListener(function (message) {
         clearTimeout(aid);
         uid = setTimeout(() => window.scrollBy({ top: window.innerHeight }), 1e2);
         aid = setTimeout(() => getReplies(), 1e4);
+        // console.log("ui request fullfilled");
       }
       break;
     case "vp":
-      document.querySelector("body > ytd-app > ytd-miniplayer")?.remove();
-      document.querySelector("body > ytd-app > ytd-popup-container")?.remove();
-      document.querySelector("#secondary")?.remove();
-      document.querySelector("#player")?.remove();
-      document.querySelector("#alerts")?.remove();
-      document.querySelector("#messages")?.remove();
-      document.querySelector("#clarify-box")?.remove();
-      document.querySelector("#limited-state")?.remove();
-      document.querySelector("#below > ytd-watch-metadata")?.remove();
-      document.querySelector("#below > div:nth-child(1)")?.remove();
-      document.querySelector("#ticket-shelf")?.remove();
-      document.querySelector("#merch-shelf")?.remove();
+      {
+        let depth = 6;
+        let element = document.querySelector("#comments");
+        while (depth > 0) {
+          depth--;
+          for (const el of element.parentElement.children) {
+            if (el !== element) el.remove();
+          }
+          element = element.parentElement;
+        }
+        // console.log("vp request fullfilled");
+      }
       break;
   }
 });

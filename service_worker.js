@@ -19,6 +19,7 @@ webRequest.onBeforeRequest.addListener(
         const tabURL = new URL(tab.url);
 
         if (tabURL.pathname === "/watch" && tabURL.searchParams.has("v")) {
+          // console.log("vp", tabURL);
           await tabs.sendMessage(tabId, { type: "vp" });
         }
       }
@@ -61,7 +62,7 @@ webRequest.onCompleted.addListener(
             } else {
               await storage.local.set({ [videoID]: [stringUA] });
             }
-
+            // console.log("ui", tabURL);
             await tabs.sendMessage(tabId, { type: "ui" });
           }
         }
