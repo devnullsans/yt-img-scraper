@@ -32,10 +32,8 @@ storage.local.get((result) => {
 
 function refreshList(e) {
   const btns = document.querySelectorAll("nav > button");
-  btns.forEach((btn) => {
-    btn.disabled = btn === e.target;
-  });
-  const key = e.target.textContent;
+  for (const btn of btns) btn.disabled = btn === e.target;
+  const key = e.target.innerText;
   if (Array.isArray(store[key])) showImages(store[key]);
   else showImages(Array.from(images));
 }

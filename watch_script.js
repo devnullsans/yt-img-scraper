@@ -1,83 +1,82 @@
 const { runtime } = chrome;
 
-let aid, uid;
-const replies = [];
+console.log("Content Script Injected");
 
-const loadAllImgs = async () => {
-  const allImgs = [...document.querySelectorAll("#author-thumbnail > a")];
-  for (const btn of allImgs) {
-    await new Promise((rs) => {
-      setTimeout(rs, 1e2);
-      btn.scrollIntoView({ block: "center" });
-    });
+requestIdleCallback(() => removeUnwantedElements(), { timeout: 3e3 });
+
+function removeUnwantedElements() {
+  let depth = 6;
+  let element = document.querySelector("#comments");
+  if (!element) return requestIdleCallback(() => removeUnwantedElements(), { timeout: 3e3 });
+  while (depth > 0) {
+    depth--;
+    for (const el of element.parentElement.children) {
+      if (el !== element) el.remove();
+    }
+    element = element.parentElement;
+    // if (!element.parentElement) break;
   }
-};
+  requestIdleCallback(() => scrollAllTheWay(), { timeout: 3e3 });
+}
 
-const getMoreReplies = async () => {
-  const moreReplies = [...document.querySelectorAll("#button > ytd-button-renderer > yt-button-shape > button")];
-  // console.log(`moreReplies length ${moreReplies.length}`);
+async function scrollAllTheWay() {
+  const element = document.querySelector("#comments");
+
+  if (!element) requestIdleCallback(() => scrollAllTheWay(), { timeout: 3e3 });
+
+  let skip = 10;
+  let eHight = element.scrollHeight;
+
+  while (skip) {
+    document.scrollingElement.scrollBy({
+      top: document.scrollingElement.scrollTop + 100,
+      behavior: "smooth",
+    });
+    await new Promise((r) => setTimeout(r, 3e2));
+    if (eHight === element.scrollHeight) --skip;
+    else {
+      skip = 10;
+      eHight = element.scrollHeight;
+    }
+  }
+
+  const replies = Array.from(
+    document.querySelectorAll("#more-replies > yt-button-shape > button")
+  ).reverse();
+
+  for (const btn of replies) {
+    btn.scrollIntoView({ behavior: "smooth" });
+    await new Promise((r) => setTimeout(r, 3e2));
+    btn.click();
+    await new Promise((r) => setTimeout(r, 9e2));
+  }
+
+  showAllMoreReplies();
+  // console.log("All Top Level Replys should have been expanded");
+}
+
+async function showAllMoreReplies() {
+  const moreReplies = document.querySelectorAll(
+    "#button > ytd-button-renderer > yt-button-shape > button"
+  );
   if (moreReplies.length) {
     for (const btn of moreReplies) {
-      await new Promise((rs) => {
-        setTimeout(rs, 1e3);
-        btn.scrollIntoView({ behavior: "smooth" });
-        btn.click();
-      });
-      // console.log(`Index of btn ${moreReplies.indexOf(btn)}`);
-    }
-    getMoreReplies();
-  } else {
-    window.scrollTo({ top: 0 });
-    setTimeout(() => loadAllImgs(), 1e4);
-  }
-};
-
-const popReplies = async () => {
-  for (const btn of replies) {
-    await new Promise((rs) => {
-      setTimeout(rs, 1e3);
       btn.scrollIntoView({ behavior: "smooth" });
+      await new Promise((r) => setTimeout(r, 3e2));
       btn.click();
-    });
-    // console.log(`Index of btn ${replies.indexOf(btn)}`);
+      await new Promise((r) => setTimeout(r, 9e2));
+    }
+    showAllMoreReplies();
+  } else {
+    document.scrollingElement.scrollTo({ top: 0, behavior: "smooth" });
+    requestIdleCallback(() => loadAllImgs(), { timeout: 3e3 });
   }
-  getMoreReplies();
-};
+}
 
-const getReplies = () => {
-  if (replies.length === 0) {
-    replies.push(...document.querySelectorAll("#more-replies > yt-button-shape > button"));
-    popReplies();
-    // console.log(`replies length ${replies.length}`);
+async function loadAllImgs() {
+  const allImgs = document.querySelectorAll("#author-thumbnail > a");
+  for (const img of allImgs) {
+    img.scrollIntoView({ block: "center" });
+    await new Promise((r) => setTimeout(r, 1e2));
   }
-};
-
-runtime.onMessage.addListener(function (message) {
-  switch (message.type) {
-    case "ui":
-      if (replies.length === 0) {
-        clearTimeout(uid);
-        clearTimeout(aid);
-        uid = setTimeout(() => window.scrollBy({ top: window.innerHeight }), 1e2);
-        aid = setTimeout(() => getReplies(), 1e4);
-        // console.log("ui request fullfilled");
-      }
-      break;
-    case "vp":
-      {
-        let depth = 6;
-        let element = document.querySelector("#comments");
-        while (depth > 0) {
-          depth--;
-          for (const el of element.parentElement.children) {
-            if (el !== element) el.remove();
-          }
-          element = element.parentElement;
-        }
-        // console.log("vp request fullfilled");
-      }
-      break;
-  }
-});
-
-console.log("Content Script Injected");
+}
