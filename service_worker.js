@@ -1,12 +1,12 @@
-const { runtime, storage, tabs, webRequest } = chrome;
+const { storage, tabs, webRequest } = chrome;
 
-runtime.onInstalled.addListener(async function () {
-  try {
-    await storage.local.clear();
-  } catch (error) {
-    console.error(error);
-  }
-});
+// runtime.onInstalled.addListener(async function () {
+//   try {
+//     await storage.local.clear();
+//   } catch (error) {
+//     console.error(error);
+//   }
+// });
 
 webRequest.onCompleted.addListener(
   async function (details) {

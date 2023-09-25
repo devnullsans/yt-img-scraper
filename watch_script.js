@@ -24,35 +24,51 @@ async function scrollAllTheWay() {
 
   if (!element) requestIdleCallback(() => scrollAllTheWay(), { timeout: 3e3 });
 
-  let skip = 10;
-  let eHight = element.scrollHeight;
+  let keeplooping = true;
 
-  while (skip) {
-    document.scrollingElement.scrollBy({
-      top: document.scrollingElement.scrollTop + 100,
-      behavior: "smooth",
-    });
-    await new Promise((r) => setTimeout(r, 3e2));
-    if (eHight === element.scrollHeight) --skip;
-    else {
-      skip = 10;
-      eHight = element.scrollHeight;
+  function checkScrollSpinner() {
+    const { scrollTop, clientHeight, scrollHeight } = document.scrollingElement;
+    // console.log("scrollPosition", scrollHeight - clientHeight - scrollTop);
+    if (!(scrollHeight - clientHeight - scrollTop)) {
+      const spinners = document.querySelectorAll("#comments #spinner:not([hidden])");
+      // console.log("spinners.length", spinners.length);
+      if (spinners.length === 0) keeplooping = false;
     }
   }
+
+  document.addEventListener("scrollend", checkScrollSpinner);
+
+  while (keeplooping) {
+    document.scrollingElement.scrollBy({
+      top: document.scrollingElement.scrollTop + 1e2,
+      behavior: "instant",
+    });
+    await new Promise((r) => setTimeout(r, 3e2));
+    // console.log(document.scrollingElement.scrollTop);
+  }
+
+  document.removeEventListener("scrollend", checkScrollSpinner);
 
   const replies = Array.from(
     document.querySelectorAll("#more-replies > yt-button-shape > button")
   ).reverse();
 
   for (const btn of replies) {
-    btn.scrollIntoView({ behavior: "smooth" });
-    await new Promise((r) => setTimeout(r, 3e2));
+    btn.scrollIntoView({ behavior: "instant" });
     btn.click();
-    await new Promise((r) => setTimeout(r, 9e2));
+    await new Promise((res) => {
+      const iid = setInterval(() => {
+        const spinners = document.querySelectorAll("#comments #spinner:not([hidden])");
+        // console.log("spinners.length", spinners.length);
+        if (spinners.length === 0) {
+          clearInterval(iid);
+          res();
+        }
+      }, 3e2);
+    });
   }
 
   showAllMoreReplies();
-  // console.log("All Top Level Replys should have been expanded");
 }
 
 async function showAllMoreReplies() {
@@ -61,10 +77,18 @@ async function showAllMoreReplies() {
   );
   if (moreReplies.length) {
     for (const btn of moreReplies) {
-      btn.scrollIntoView({ behavior: "smooth" });
-      await new Promise((r) => setTimeout(r, 3e2));
+      btn.scrollIntoView({ behavior: "instant" });
       btn.click();
-      await new Promise((r) => setTimeout(r, 9e2));
+      await new Promise((res) => {
+        const iid = setInterval(() => {
+          const spinners = document.querySelectorAll("#comments #spinner:not([hidden])");
+          // console.log("spinners.length", spinners.length);
+          if (spinners.length === 0) {
+            clearInterval(iid);
+            res();
+          }
+        }, 3e2);
+      });
     }
     showAllMoreReplies();
   } else {
@@ -76,7 +100,9 @@ async function showAllMoreReplies() {
 async function loadAllImgs() {
   const allImgs = document.querySelectorAll("#author-thumbnail > a");
   for (const img of allImgs) {
-    img.scrollIntoView({ block: "center" });
+    img.scrollIntoView({ block: "center", behavior: "instant" });
     await new Promise((r) => setTimeout(r, 1e2));
   }
 }
+
+// https://www.youtube.com/watch?v=6RwkR6b0Nb8
