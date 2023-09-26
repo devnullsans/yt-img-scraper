@@ -39,11 +39,11 @@ async function scrollAllTheWay() {
   document.addEventListener("scrollend", checkScrollSpinner);
 
   while (keeplooping) {
+    await new Promise((r) => setTimeout(r, 3e2));
     document.scrollingElement.scrollBy({
       top: document.scrollingElement.scrollTop + 1e2,
       behavior: "instant",
     });
-    await new Promise((r) => setTimeout(r, 3e2));
     // console.log(document.scrollingElement.scrollTop);
   }
 
@@ -55,6 +55,7 @@ async function scrollAllTheWay() {
 
   for (const btn of replies) {
     btn.scrollIntoView({ behavior: "instant" });
+    await new Promise((res) => setTimeout(res, 3e2));
     btn.click();
     await new Promise((res) => {
       const iid = setInterval(() => {
@@ -78,6 +79,7 @@ async function showAllMoreReplies() {
   if (moreReplies.length) {
     for (const btn of moreReplies) {
       btn.scrollIntoView({ behavior: "instant" });
+      await new Promise((res) => setTimeout(res, 3e2));
       btn.click();
       await new Promise((res) => {
         const iid = setInterval(() => {
@@ -97,12 +99,40 @@ async function showAllMoreReplies() {
   }
 }
 
-async function loadAllImgs() {
-  const allImgs = document.querySelectorAll("#author-thumbnail > a");
-  for (const img of allImgs) {
-    img.scrollIntoView({ block: "center", behavior: "instant" });
-    await new Promise((r) => setTimeout(r, 1e2));
+function loadAllImgs() {
+  const allImgs = Array.from(document.querySelectorAll("#author-thumbnail > a")).reverse();
+  function focusAllImgs() {
+    if (allImgs.length) {
+      const img = allImgs.pop();
+      img.scrollIntoView({ block: "center", behavior: "instant" });
+    } else {
+      document.removeEventListener("scrollend", focusAllImgs);
+    }
   }
+  document.addEventListener("scrollend", focusAllImgs);
+  document.scrollingElement.scrollBy({
+    top: document.scrollingElement.scrollTop + 1e1,
+    behavior: "instant",
+  });
+  // const allImgs = Array.from(document.querySelectorAll("#author-thumbnail > a")).reverse();
+  // function focusAllImgs() {
+  //   if (allImgs.length) {
+  //     const img = allImgs.pop();
+  //     img.scrollIntoView({ block: "center", behavior: "instant" });
+  //     requestAnimationFrame(focusAllImgs);
+  //   }
+  // }
+  // requestAnimationFrame(focusAllImgs);
+  // const allImgs = document.querySelectorAll("#author-thumbnail > a");
+  // for (const img of allImgs) {
+  //   img.scrollIntoView({ block: "center", behavior: "instant" });
+  //   await new Promise((r) => setTimeout(r, 1e2));
+  // }
+  // const allImgs = document.querySelectorAll("#author-thumbnail > a");
+  // for (const img of allImgs) {
+  //   await Promise.resolve();
+  //   img.scrollIntoView({ block: "center", behavior: "instant" });
+  // }
 }
 
 // https://www.youtube.com/watch?v=6RwkR6b0Nb8
