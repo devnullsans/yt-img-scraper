@@ -3,26 +3,36 @@
   <head>
     <style>
       body {
+        height: calc(100vh - 0.4rem);
         margin: 0.2rem;
+        display: flex;
+        flex-flow: column nowrap;
         background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
       }
       nav {
+        flex: 1 1 auto;
         margin-bottom: 0.2rem;
         display: flex;
+        flex-flow: row nowrap;
         overflow-x: auto;
       }
       nav > button {
         margin: 0 0.2rem;
+        white-space: nowrap;
       }
       main {
+        flex: 1 1 100%;
         margin-top: 0.2rem;
+        overflow-y: auto;
         display: grid;
         gap: 0.1rem;
         place-items: center;
         grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
       }
     </style>
-    <script src="options.js" defer></script>
+    <script
+      src="options.js"
+      defer></script>
   </head>
   <body>
     <nav></nav>
