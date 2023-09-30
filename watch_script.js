@@ -1,83 +1,138 @@
 const { runtime } = chrome;
 
-let aid, uid;
-const replies = [];
+console.log("Content Script Injected");
 
-const loadAllImgs = async () => {
-  const allImgs = [...document.querySelectorAll("#author-thumbnail > a")];
-  for (const btn of allImgs) {
-    await new Promise((rs) => {
-      setTimeout(rs, 1e2);
-      btn.scrollIntoView({ block: "center" });
+requestIdleCallback(() => removeUnwantedElements(), { timeout: 3e3 });
+
+function removeUnwantedElements() {
+  let depth = 6;
+  let element = document.querySelector("#comments");
+  if (!element) return requestIdleCallback(() => removeUnwantedElements(), { timeout: 3e3 });
+  while (depth > 0) {
+    depth--;
+    for (const el of element.parentElement.children) {
+      if (el !== element) el.remove();
+    }
+    element = element.parentElement;
+    // if (!element.parentElement) break;
+  }
+  requestIdleCallback(() => scrollAllTheWay(), { timeout: 3e3 });
+}
+
+async function scrollAllTheWay() {
+  const element = document.querySelector("#comments");
+
+  if (!element) requestIdleCallback(() => scrollAllTheWay(), { timeout: 3e3 });
+
+  let keeplooping = true;
+
+  function checkScrollSpinner() {
+    const { scrollTop, clientHeight, scrollHeight } = document.scrollingElement;
+    // console.log("scrollPosition", scrollHeight - clientHeight - scrollTop);
+    if (!(scrollHeight - clientHeight - scrollTop)) {
+      const spinners = document.querySelectorAll("#comments #spinner:not([hidden])");
+      // console.log("spinners.length", spinners.length);
+      if (spinners.length === 0) keeplooping = false;
+    }
+  }
+
+  document.addEventListener("scrollend", checkScrollSpinner);
+
+  while (keeplooping) {
+    await new Promise((r) => setTimeout(r, 3e2));
+    document.scrollingElement.scrollBy({
+      top: document.scrollingElement.scrollTop + 1e2,
+      behavior: "instant",
+    });
+    // console.log(document.scrollingElement.scrollTop);
+  }
+
+  document.removeEventListener("scrollend", checkScrollSpinner);
+
+  const replies = Array.from(
+    document.querySelectorAll("#more-replies > yt-button-shape > button")
+  ).reverse();
+
+  for (const btn of replies) {
+    btn.scrollIntoView({ behavior: "instant" });
+    await new Promise((res) => setTimeout(res, 3e2));
+    btn.click();
+    await new Promise((res) => {
+      const iid = setInterval(() => {
+        const spinners = document.querySelectorAll("#comments #spinner:not([hidden])");
+        // console.log("spinners.length", spinners.length);
+        if (spinners.length === 0) {
+          clearInterval(iid);
+          res();
+        }
+      }, 3e2);
     });
   }
-};
 
-const getMoreReplies = async () => {
-  const moreReplies = [...document.querySelectorAll("#button > ytd-button-renderer > yt-button-shape > button")];
-  // console.log(`moreReplies length ${moreReplies.length}`);
+  showAllMoreReplies();
+}
+
+async function showAllMoreReplies() {
+  const moreReplies = document.querySelectorAll(
+    "#button > ytd-button-renderer > yt-button-shape > button"
+  );
   if (moreReplies.length) {
     for (const btn of moreReplies) {
-      await new Promise((rs) => {
-        setTimeout(rs, 1e3);
-        btn.scrollIntoView({ behavior: "smooth" });
-        btn.click();
-      });
-      // console.log(`Index of btn ${moreReplies.indexOf(btn)}`);
-    }
-    getMoreReplies();
-  } else {
-    window.scrollTo({ top: 0 });
-    setTimeout(() => loadAllImgs(), 1e4);
-  }
-};
-
-const popReplies = async () => {
-  for (const btn of replies) {
-    await new Promise((rs) => {
-      setTimeout(rs, 1e3);
-      btn.scrollIntoView({ behavior: "smooth" });
+      btn.scrollIntoView({ behavior: "instant" });
+      await new Promise((res) => setTimeout(res, 3e2));
       btn.click();
-    });
-    // console.log(`Index of btn ${replies.indexOf(btn)}`);
-  }
-  getMoreReplies();
-};
-
-const getReplies = () => {
-  if (replies.length === 0) {
-    replies.push(...document.querySelectorAll("#more-replies > yt-button-shape > button"));
-    popReplies();
-    // console.log(`replies length ${replies.length}`);
-  }
-};
-
-runtime.onMessage.addListener(function (message) {
-  switch (message.type) {
-    case "ui":
-      if (replies.length === 0) {
-        clearTimeout(uid);
-        clearTimeout(aid);
-        uid = setTimeout(() => window.scrollBy({ top: window.innerHeight }), 1e2);
-        aid = setTimeout(() => getReplies(), 1e4);
-        // console.log("ui request fullfilled");
-      }
-      break;
-    case "vp":
-      {
-        let depth = 6;
-        let element = document.querySelector("#comments");
-        while (depth > 0) {
-          depth--;
-          for (const el of element.parentElement.children) {
-            if (el !== element) el.remove();
+      await new Promise((res) => {
+        const iid = setInterval(() => {
+          const spinners = document.querySelectorAll("#comments #spinner:not([hidden])");
+          // console.log("spinners.length", spinners.length);
+          if (spinners.length === 0) {
+            clearInterval(iid);
+            res();
           }
-          element = element.parentElement;
-        }
-        // console.log("vp request fullfilled");
-      }
-      break;
+        }, 3e2);
+      });
+    }
+    showAllMoreReplies();
+  } else {
+    document.scrollingElement.scrollTo({ top: 0, behavior: "smooth" });
+    requestIdleCallback(() => loadAllImgs(), { timeout: 3e3 });
   }
-});
+}
 
-console.log("Content Script Injected");
+function loadAllImgs() {
+  const allImgs = Array.from(document.querySelectorAll("#author-thumbnail > a")).reverse();
+  function focusAllImgs() {
+    if (allImgs.length) {
+      const img = allImgs.pop();
+      img.scrollIntoView({ block: "center", behavior: "instant" });
+    } else {
+      document.removeEventListener("scrollend", focusAllImgs);
+    }
+  }
+  document.addEventListener("scrollend", focusAllImgs);
+  document.scrollingElement.scrollBy({
+    top: document.scrollingElement.scrollTop + 1e1,
+    behavior: "instant",
+  });
+  // const allImgs = Array.from(document.querySelectorAll("#author-thumbnail > a")).reverse();
+  // function focusAllImgs() {
+  //   if (allImgs.length) {
+  //     const img = allImgs.pop();
+  //     img.scrollIntoView({ block: "center", behavior: "instant" });
+  //     requestAnimationFrame(focusAllImgs);
+  //   }
+  // }
+  // requestAnimationFrame(focusAllImgs);
+  // const allImgs = document.querySelectorAll("#author-thumbnail > a");
+  // for (const img of allImgs) {
+  //   img.scrollIntoView({ block: "center", behavior: "instant" });
+  //   await new Promise((r) => setTimeout(r, 1e2));
+  // }
+  // const allImgs = document.querySelectorAll("#author-thumbnail > a");
+  // for (const img of allImgs) {
+  //   await Promise.resolve();
+  //   img.scrollIntoView({ block: "center", behavior: "instant" });
+  // }
+}
+
+// https://www.youtube.com/watch?v=6RwkR6b0Nb8

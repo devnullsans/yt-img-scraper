@@ -1,79 +1,55 @@
-const { runtime, storage, tabs, webRequest } = chrome;
+const { storage, tabs, webRequest } = chrome;
 
-runtime.onInstalled.addListener(async function () {
-  try {
-    await storage.local.clear();
-  } catch (error) {
-    console.error(error);
-  }
-});
-
-webRequest.onBeforeRequest.addListener(
-  async function (details) {
-    try {
-      const { tabId, initiator } = details;
-
-      if (initiator === "https://www.youtube.com") {
-        const tab = await tabs.get(tabId);
-
-        const tabURL = new URL(tab.url);
-
-        if (tabURL.pathname === "/watch" && tabURL.searchParams.has("v")) {
-          // console.log("vp", tabURL);
-          await tabs.sendMessage(tabId, { type: "vp" });
-        }
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  },
-  {
-    urls: ["https://*.googlevideo.com/videoplayback*"],
-    types: ["xmlhttprequest"]
-  }
-);
+// runtime.onInstalled.addListener(async function () {
+//   try {
+//     await storage.local.clear();
+//   } catch (error) {
+//     console.error(error);
+//   }
+// });
 
 webRequest.onCompleted.addListener(
   async function (details) {
     try {
       const { url, tabId, responseHeaders, initiator } = details;
+      // console.log({ url, tabId, responseHeaders, initiator });
 
-      if (initiator === "https://www.youtube.com") {
-        const uasURL = new URL(url);
+      if (initiator !== "https://www.youtube.com") return;
 
-        if (responseHeaders.some((header) => header.name === "etag") && !uasURL.pathname.includes("default-user")) {
-          const tab = await tabs.get(tabId);
+      const uasURL = new URL(url);
 
-          const tabURL = new URL(tab.url);
+      if (
+        uasURL.pathname.includes("default-user") ||
+        responseHeaders.every((header) => header.name !== "etag")
+      )
+        return;
 
-          if (tabURL.pathname === "/watch" && tabURL.searchParams.has("v")) {
-            const videoID = tabURL.searchParams.get("v");
+      const tab = await tabs.get(tabId);
 
-            const stringUA = uasURL.pathname.replace(/=s\d+.*/, "");
+      const tabURL = new URL(tab.url);
 
-            const store = await storage.local.get(videoID);
+      if (tabURL.pathname !== "/watch" || !tabURL.searchParams.has("v")) return;
 
-            const list = store[videoID];
+      const videoID = tabURL.searchParams.get("v");
 
-            if (Array.isArray(list)) {
-              if (!list.includes(stringUA)) {
-                await storage.local.set({ [videoID]: [...list, stringUA] });
-              }
-            } else {
-              await storage.local.set({ [videoID]: [stringUA] });
-            }
-            // console.log("ui", tabURL);
-            await tabs.sendMessage(tabId, { type: "ui" });
-          }
-        }
-      }
+      const stringUA = uasURL.pathname.replace(/=[a-z]\d+.*/, "");
+
+      const store = await storage.local.get(videoID);
+      // console.log("store", store);
+
+      const list = store[videoID];
+      // console.log("list", list);
+
+      if (!Array.isArray(list)) await storage.local.set({ [videoID]: [stringUA] });
+      else if (!list.includes(stringUA))
+        await storage.local.set({ [videoID]: [...list, stringUA] });
     } catch (error) {
       console.error(error);
     }
   },
   {
     urls: ["https://yt3.ggpht.com/*"],
-    types: ["image"]
+    types: ["image"],
   },
   ["responseHeaders"]
 );
